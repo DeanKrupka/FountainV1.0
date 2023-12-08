@@ -3,15 +3,14 @@
 pragma solidity ^0.8.19;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-//import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
-error Fountain__NotOwner();
-error Fountain__ValueMustBeGreaterThanZero();
-
 contract Fountain is IERC721Receiver, Ownable {
+    error Fountain__NotOwner();
+    error Fountain__ValueMustBeGreaterThanZero();
+
     event TossedEthOrToken(
         address indexed _from,
         uint256 _value,
@@ -24,7 +23,6 @@ contract Fountain is IERC721Receiver, Ownable {
         uint256 _tokenId
     );
 
-    address private immutable i_owner;
     address[] private s_tossers;
     address[] private s_tokenAddresses;
     address[] private s_nftTossers;
@@ -39,7 +37,6 @@ contract Fountain is IERC721Receiver, Ownable {
     mapping(address => uint256) private tokenAddressToTotalTossed;
 
     constructor() Ownable(msg.sender) {
-        i_owner = msg.sender;
         s_tokenAddresses.push(address(0)); // initializes first element of array for Eth
     }
 
@@ -55,11 +52,6 @@ contract Fountain is IERC721Receiver, Ownable {
         tokenAddressToTotalTossed[address(0)] += msg.value;
 
         emit TossedEthOrToken(msg.sender, msg.value, address(0));
-    }
-
-    function approveTossToken(address _tokenAddress, uint256 _value) public {
-        bool approveToss = ERC20(_tokenAddress).approve(address(this), _value);
-        require(approveToss, "ERC20 Approval failed.");
     }
 
     function tossToken(address _tokenAddress, uint256 _value) public {
@@ -114,7 +106,7 @@ contract Fountain is IERC721Receiver, Ownable {
     }
 
     function withdrawEth() public onlyOwner {
-        (bool callSuccess, ) = payable(i_owner).call{
+        (bool callSuccess, ) = payable(msg.sender).call{
             value: address(this).balance
         }("");
         require(callSuccess, "Call failed");
